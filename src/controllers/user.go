@@ -61,3 +61,54 @@ func (u userController) SignupUser() http.HandlerFunc {
 		)
 	}
 }
+
+func (u userController) LoginUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := entities.User{}
+
+		credentials := models.Credentials{}
+		json.NewDecoder(r.Body).Decode(&credentials)
+
+		if len(credentials.Id) < 3 {
+			error.ApiError(w, http.StatusBadRequest, "Invalid username/email")
+			return
+		}
+
+		if len(credentials.Password) < 3 {
+			error.ApiError(w, http.StatusBadRequest, "Invalid password")
+			return
+		}
+
+		result := u.db.
+			Where("username = ? OR email = ?", credentials.Id, credentials.Id).
+			First(&user)
+		if result.Error != nil || result.RowsAffected < 1 {
+			error.ApiError(w, http.StatusNotFound, "Invalid username/email, please signup!")
+			return
+		}
+
+		if user.Password != credentials.Password {
+			error.ApiError(w, http.StatusNotFound, "Invalid credentials!")
+			return
+		}
+
+		payload := helpers.Payload{
+			Username: user.Username,
+			Email:    user.Email,
+			Id:       user.ID,
+		}
+
+		token, err := helpers.GenerateJwtToken(payload)
+		if err != nil {
+			error.ApiError(w, http.StatusInternalServerError, "Failed to generate JWT token!")
+			return
+		}
+		
+		helpers.RespondWithJSON(
+			w,
+			models.LoginUserResponse{
+				Token: token,
+			},
+		)
+	}
+}

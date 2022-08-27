@@ -13,6 +13,7 @@ func RegisterRoutes(db *gorm.DB) *mux.Router {
 
 	userController := controllers.NewUserController(db)
 	router.HandleFunc("/auth/signup", userController.SignupUser()).Methods(http.MethodPost)
+	router.HandleFunc("/auth/login", userController.LoginUser()).Methods(http.MethodPost)
 
 	return router
 }

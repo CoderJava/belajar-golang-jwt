@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"belajar-golang-jwt/helpers"
+	"belajar-golang-jwt/src/helpers"
 	"net/http"
 	"strings"
 )

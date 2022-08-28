@@ -22,7 +22,7 @@ func CheckAuth(next http.HandlerFunc) http.HandlerFunc {
 
 		_, err := helpers.VerifyJwtToken(token)
 		if err != nil {
-			error.ApiError(w, http.StatusForbidden, err.Error())
+			error.ApiError(w, http.StatusUnauthorized, "Token expired!")
 			return
 		}
 

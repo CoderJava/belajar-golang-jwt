@@ -22,6 +22,7 @@ func RegisterRoutes(db *gorm.DB) *mux.Router {
 	router.HandleFunc("/food", middlewares.CheckAuth(foodController.AddNewFoodItem())).Methods(http.MethodPost)
 	router.HandleFunc("/food", middlewares.CheckAuth(foodController.GetAllFoodItems())).Methods(http.MethodGet)
 	router.HandleFunc("/food/{id}", middlewares.CheckAuth(foodController.GetSingleFoodItem())).Methods(http.MethodGet)
+	router.HandleFunc("/food/{id}", middlewares.CheckAuth(foodController.DeleteFoodById())).Methods(http.MethodDelete)
 
 	return router
 }

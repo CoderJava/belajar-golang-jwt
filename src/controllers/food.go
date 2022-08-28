@@ -116,3 +116,31 @@ func (f FoodController) GetSingleFoodItem() http.HandlerFunc {
 		)
 	}
 }
+
+func (f FoodController) DeleteFoodById() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pathParams := mux.Vars(r)
+		food := entities.Food{}
+
+		paramId := pathParams["id"]
+		if result := f.db.Where("id = ?", paramId).First(&food); result.Error != nil || result.RowsAffected < 1 {
+			f.error.ApiError(w, http.StatusNotFound, "Didn't find food item with id = "+paramId)
+			return
+		}
+
+		if result := f.db.Delete(&food); result.Error != nil || result.RowsAffected < 1 {
+			f.error.ApiError(w, http.StatusInternalServerError, "Failed to delete food from database!")
+			return
+		}
+
+		helpers.RespondWithJSON(
+			w,
+			models.SingleFoodItemResponse{
+				ID:           food.ID,
+				Name:         food.Name,
+				Quantity:     food.Quantity,
+				SellingPrice: food.SellingPrice,
+			},
+		)
+	}
+}

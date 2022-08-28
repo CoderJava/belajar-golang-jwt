@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 )
 
@@ -87,6 +88,31 @@ func (f FoodController) GetAllFoodItems() http.HandlerFunc {
 		helpers.RespondWithJSON(
 			w,
 			allFoodItemResponse,
+		)
+	}
+}
+
+func (f FoodController) GetSingleFoodItem() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pathParams := mux.Vars(r)
+		food := entities.Food{}
+
+		result := f.db.
+			Where("id = ?", pathParams["id"]).
+			First(&food)
+		if result.Error != nil || result.RowsAffected < 1 {
+			f.error.ApiError(w, http.StatusNotFound, "Didn't find food item with id = "+pathParams["id"])
+			return
+		}
+
+		helpers.RespondWithJSON(
+			w,
+			models.SingleFoodItemResponse{
+				ID:           food.ID,
+				Name:         food.Name,
+				Quantity:     food.Quantity,
+				SellingPrice: food.SellingPrice,
+			},
 		)
 	}
 }

@@ -11,13 +11,12 @@ import (
 )
 
 type userController struct {
-	db *gorm.DB
+	db    *gorm.DB
+	error helpers.CustomError
 }
 
-var error = helpers.CustomError{}
-
-func NewUserController(db *gorm.DB) *userController {
-	return &userController{db}
+func NewUserController(db *gorm.DB, error helpers.CustomError) *userController {
+	return &userController{db, error}
 }
 
 func (u userController) SignupUser() http.HandlerFunc {
@@ -26,27 +25,27 @@ func (u userController) SignupUser() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&user)
 
 		if len(user.Name) < 3 {
-			error.ApiError(w, http.StatusBadRequest, "Name should be at least 3 characters long!")
+			u.error.ApiError(w, http.StatusBadRequest, "Name should be at least 3 characters long!")
 			return
 		}
 
 		if len(user.Username) < 3 {
-			error.ApiError(w, http.StatusBadRequest, "Username should be at least 3 characters long!")
+			u.error.ApiError(w, http.StatusBadRequest, "Username should be at least 3 characters long!")
 			return
 		}
 
 		if len(user.Email) < 3 {
-			error.ApiError(w, http.StatusBadRequest, "Email should be at least 3 characters long!")
+			u.error.ApiError(w, http.StatusBadRequest, "Email should be at least 3 characters long!")
 			return
 		}
 
 		if len(user.Password) < 3 {
-			error.ApiError(w, http.StatusBadRequest, "Password should be at least 3 characters long!")
+			u.error.ApiError(w, http.StatusBadRequest, "Password should be at least 3 characters long!")
 			return
 		}
 
 		if result := u.db.Create(&user); result.Error != nil {
-			error.ApiError(w, http.StatusInternalServerError, "Failed to add new user n database!\n"+result.Error.Error())
+			u.error.ApiError(w, http.StatusInternalServerError, "Failed to add new user n database!\n"+result.Error.Error())
 			return
 		}
 
@@ -70,12 +69,12 @@ func (u userController) LoginUser() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&credentials)
 
 		if len(credentials.Id) < 3 {
-			error.ApiError(w, http.StatusBadRequest, "Invalid username/email")
+			u.error.ApiError(w, http.StatusBadRequest, "Invalid username/email")
 			return
 		}
 
 		if len(credentials.Password) < 3 {
-			error.ApiError(w, http.StatusBadRequest, "Invalid password")
+			u.error.ApiError(w, http.StatusBadRequest, "Invalid password")
 			return
 		}
 
@@ -83,12 +82,12 @@ func (u userController) LoginUser() http.HandlerFunc {
 			Where("username = ? OR email = ?", credentials.Id, credentials.Id).
 			First(&user)
 		if result.Error != nil || result.RowsAffected < 1 {
-			error.ApiError(w, http.StatusNotFound, "Invalid username/email, please signup!")
+			u.error.ApiError(w, http.StatusNotFound, "Invalid username/email, please signup!")
 			return
 		}
 
 		if user.Password != credentials.Password {
-			error.ApiError(w, http.StatusNotFound, "Invalid credentials!")
+			u.error.ApiError(w, http.StatusNotFound, "Invalid credentials!")
 			return
 		}
 
@@ -100,10 +99,10 @@ func (u userController) LoginUser() http.HandlerFunc {
 
 		token, err := helpers.GenerateJwtToken(payload)
 		if err != nil {
-			error.ApiError(w, http.StatusInternalServerError, "Failed to generate JWT token!")
+			u.error.ApiError(w, http.StatusInternalServerError, "Failed to generate JWT token!")
 			return
 		}
-		
+
 		helpers.RespondWithJSON(
 			w,
 			models.LoginUserResponse{
